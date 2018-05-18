@@ -551,9 +551,9 @@ ODM_SetTimer(
 	)
 {
 #if (DM_ODM_SUPPORT_TYPE & ODM_AP)
-	mod_timer(pTimer, jiffies + RTL_MILISECONDS_TO_JIFFIES(msDelay));
+	mod_timer((struct timer_list *) pTimer, jiffies + RTL_MILISECONDS_TO_JIFFIES(msDelay));
 #elif(DM_ODM_SUPPORT_TYPE & ODM_CE)
-	_set_timer(pTimer,msDelay ); //ms
+	_set_timer((struct _compat_timer_list *) pTimer,msDelay ); //ms
 #elif(DM_ODM_SUPPORT_TYPE & ODM_WIN)
 	PADAPTER		Adapter = pDM_Odm->Adapter;
 	PlatformSetTimer(Adapter, pTimer, msDelay);
@@ -571,13 +571,13 @@ ODM_InitializeTimer(
 	)
 {
 #if (DM_ODM_SUPPORT_TYPE & ODM_AP)
-	init_timer(pTimer);
+	init_timer((struct timer_list *) pTimer);
 	pTimer->function = CallBackFunc;
 	pTimer->data = (unsigned long)pDM_Odm;
 	/*mod_timer(pTimer, jiffies+RTL_MILISECONDS_TO_JIFFIES(10));	*/
 #elif(DM_ODM_SUPPORT_TYPE & ODM_CE)
 	PADAPTER Adapter = pDM_Odm->Adapter;
-	_init_timer(pTimer,Adapter->pnetdev,CallBackFunc,pDM_Odm);
+	_init_timer((struct _compat_timer_list *) pTimer,Adapter->pnetdev,CallBackFunc,pDM_Odm);
 #elif(DM_ODM_SUPPORT_TYPE & ODM_WIN)
 	PADAPTER Adapter = pDM_Odm->Adapter;
 	PlatformInitializeTimer(Adapter, pTimer, CallBackFunc,pContext,szID);
@@ -594,7 +594,7 @@ ODM_CancelTimer(
 #if (DM_ODM_SUPPORT_TYPE & ODM_AP)
 	del_timer(pTimer);
 #elif(DM_ODM_SUPPORT_TYPE & ODM_CE)
-	_cancel_timer_ex(pTimer);
+	_cancel_timer_ex((struct _compat_timer_list *) pTimer);
 #elif(DM_ODM_SUPPORT_TYPE & ODM_WIN)
 	PADAPTER Adapter = pDM_Odm->Adapter;
 	PlatformCancelTimer(Adapter, pTimer);

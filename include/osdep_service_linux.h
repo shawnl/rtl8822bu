@@ -138,7 +138,17 @@ typedef struct mutex		_mutex;
 #else
 typedef struct semaphore	_mutex;
 #endif
-typedef struct timer_list _timer;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
+	struct _compat_timer_list {
+		struct timer_list tl;
+		void (*function)(unsigned long);
+		unsigned long data;
+	};
+	typedef struct _compat_timer_list _timer;
+#else
+	typedef struct timer_list _timer;
+#endif
+
 
 struct	__queue	{
 	struct	list_head	queue;
@@ -256,19 +266,31 @@ __inline static void rtw_list_delete(_list *plist) {
 
 #define RTW_TIMER_HDL_ARGS void *FunctionContext
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
+static void _compat_init_timer_func(struct timer_list *tl)
+{
+	struct _compat_timer_list *compat = from_timer(compat, tl, tl);
+	compat->function(compat->data);
+}
+#endif
+
 __inline static void _init_timer(_timer *ptimer, _nic_hdl nic_hdl, void *pfunc, void *cntx) {
 	/* setup_timer(ptimer, pfunc,(u32)cntx);	 */
 	ptimer->function = pfunc;
 	ptimer->data = (unsigned long)cntx;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
+	timer_setup(&ptimer->tl, _compat_init_timer_func, 0);
+#else
 	init_timer(ptimer);
+#endif
 }
 
 __inline static void _set_timer(_timer *ptimer, u32 delay_time) {
-	mod_timer(ptimer , (jiffies + (delay_time * HZ / 1000)));
+	mod_timer((struct timer_list *) ptimer , (jiffies+(delay_time*HZ/1000)));
 }
 
 __inline static void _cancel_timer(_timer *ptimer, u8 *bcancelled) {
-	del_timer_sync(ptimer);
+	del_timer_sync((struct timer_list *) ptimer);
 	*bcancelled = 1;
 }
 
